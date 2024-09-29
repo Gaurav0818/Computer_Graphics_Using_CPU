@@ -1,0 +1,6 @@
+﻿temp
+.vs
+*.user
+*.sln
+*.filters
+*.vcxproj
