@@ -31,6 +31,10 @@ public:
     float length_squared() const;
     vec3 normalise() const;
     void normalise();
+
+    void RotateInX(float angle);
+    void RotateInY(float angle);
+    void RotateInZ(float angle);
 };
 
 class vec2 {
@@ -96,3 +100,8 @@ vec3 lerp(const vec3& v, const vec3& u, float t);
 float absolute(float a);
 float distance(const vec2& v, const vec2& u);
 float distance(const vec3& v, const vec3& u);
+
+
+void rotateVecInX(vec3& v, float angle);
+void rotateVecInY(vec3& v, float angle);
+void rotateVecInZ(vec3& v, float angle);

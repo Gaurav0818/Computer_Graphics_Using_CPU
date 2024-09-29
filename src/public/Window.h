@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <vector>
 #include <memory>
+#include <chrono>
+#include <thread>
 
 class Window {
 public:
@@ -19,6 +21,8 @@ public:
 
     int getWinWidth();
     int getWinHeight();
+
+    void targetFrameTime(int target);
 
     void setClearClr(uint32_t clr);
     void drawPixel(int x, int y, uint32_t clr);

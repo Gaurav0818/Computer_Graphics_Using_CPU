@@ -6,7 +6,10 @@
 #include "Window.h"
 #include "vector.h"
 
-#define NO_POINTS 9*9*9
+#define NUM_POINTS 9*9*9
+
+#define FPS 60
+#define FRAME_TRAGET_TIME (1000 / FPS)
 
 class Application {
 public:
@@ -25,8 +28,8 @@ private:
     void update();
 
     vec3 m_cameraPos = { 0, 0, -3 };
-    float m_fovFactor = 600;
-
+    vec3 m_cubeRotation = { 0 };
+    float m_fovFactor = 640;
 
     vec2 project(vec3 point);
 

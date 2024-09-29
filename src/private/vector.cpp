@@ -85,6 +85,36 @@ void vec3::normalise() {
     z /= l;
 }
 
+void vec3::RotateInX(float angle)
+{
+    float posY = y;
+    float posz = z;
+
+    x = x;
+    y = posY * cos(angle) - posz * sin(angle);
+    z = posY * sin(angle) + posz * cos(angle);
+}
+
+void vec3::RotateInY(float angle)
+{
+    float posX = x;
+    float posZ = z;
+
+    x = posX * cos(angle) - posZ * sin(angle);
+    y = y;
+    z = posX * sin(angle) + posZ * cos(angle);
+}
+
+void vec3::RotateInZ(float angle)
+{
+    float posX = x;
+    float posY = y;
+
+    x = posX * cos(angle) - posY * sin(angle);
+    y = posX * sin(angle) + posY * cos(angle);
+    z = z;
+}
+
 vec2::vec2() : x(0), y(0) {}
 vec2::vec2(float a) : x(a), y(a) {}
 vec2::vec2(float a, float b) : x(a), y(b) {}
@@ -296,4 +326,19 @@ float distance(const vec3& v, const vec3& u) {
         (v.y - u.y) * (v.y - u.y) +
         (v.z - u.z) * (v.z - u.z)
     );
+}
+
+void rotateVecInX(vec3& v, float angle)
+{
+    v.RotateInX(angle);
+}
+
+void rotateVecInY(vec3& v, float angle)
+{
+    v.RotateInY(angle);
+}
+
+void rotateVecInZ(vec3& v, float angle)
+{
+    v.RotateInZ(angle);
 }

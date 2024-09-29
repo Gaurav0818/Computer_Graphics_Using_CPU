@@ -1,7 +1,6 @@
 #include "Window.h"
 #include <iostream>
 
-
 void Window::init() 
 {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) 
@@ -83,6 +82,11 @@ int Window::getWinWidth()
 int Window::getWinHeight()
 {
     return m_windowHeight;
+}
+
+void Window::targetFrameTime(int target)
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(target));
 }
 
 void Window::setClearClr(uint32_t clr)
