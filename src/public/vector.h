@@ -66,6 +66,7 @@ public:
 using point2 = vec2;
 using point3 = vec3;
 using color3 = vec3;
+using face3 = vec3;
 
 std::ostream& operator<<(std::ostream& out, const vec3& v);
 std::ostream& operator<<(std::ostream& out, const vec2& v);

@@ -100,6 +100,45 @@ void Window::drawPixel(int x, int y, uint32_t clr)
         m_colorBuffer[m_windowWidth * y + x] = clr;
 }
 
+void Window::drawLine(int x0, int y0, int x1, int y1, uint32_t clr)
+{
+    int dx = x1 - x0;
+    int dy = y1 - y0;
+
+    float sideLength = abs(dx) >= abs(dy) ? abs(dx) : abs(dy);
+
+    float xInc = dx / sideLength;
+    float yInc = dy / sideLength;
+
+
+    float currentX = x0;
+    float currentY = y0;
+
+    for (int i = 0; i <= sideLength; i++)
+    {
+        drawPixel(currentX, currentY, clr);
+        currentX += xInc;
+        currentY += yInc;
+    }
+
+}
+
+void Window::drawRectPoints(int x1, int y1, int x2, int y2, uint32_t clr)
+{
+    if (x2 < x1) std::swap(x1, x2);
+    if (y2 < y1) std::swap(y1, y2);
+
+    for (int y = y1; y < y2; y++)
+        for (int x = x1; x < x2; x++)
+            drawPixel(x, y, clr);
+
+}
+
+void Window::drawRect(int x1, int y1, int width, int height, uint32_t clr)
+{
+    drawRectPoints(x1, y1, x1 + width, y1 + height, clr);
+}
+
 void Window::renderColorBuffer() 
 {
     SDL_UpdateTexture(m_colorBufferTexture.get(), NULL, m_colorBuffer.data(), sizeof(uint32_t) * m_windowWidth);

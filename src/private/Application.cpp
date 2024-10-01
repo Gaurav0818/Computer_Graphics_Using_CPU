@@ -14,24 +14,23 @@ void Application::run()
     while (m_window->isRunning)
     {
         m_window->processInput();
+
         update();
-        m_window->render();
+        render();                   // write to color buffer.. from app side.
+
+        m_window->render();         // let window perform requied thinngs 
+                                    //-> convert color buffer to image 
+                                    //-> set image as renderTraget 
+                                    //-> swap buffers
+                                    //-> clear color buffer
     }
 }
 
 
 void Application::setup()
 {
-    cubePoints.resize(NUM_POINTS);
-    projectedPoints.resize(NUM_POINTS);
-
-    int pointCount = 0;
-
-    for(float x = -1; x <=1; x += 0.25)
-        for (float y = -1; y <= 1; y += 0.25)
-            for (float z = -1; z <= 1; z += 0.25)
-                cubePoints[pointCount++] = vec3(x, y, z);
-
+    m_cubeMesh = std::make_unique<Mesh>();
+    m_trisToDraw.resize(N_MESH_FACES);
 }
 
 void Application::update()
@@ -44,25 +43,61 @@ void Application::update()
     m_cubeRotation.y += 0.01;
     m_cubeRotation.z += 0.01;
 
-    for (int i = 0; i < NUM_POINTS; i++)
+    for (int i = 0; i < N_MESH_FACES; i++)
     {
-        vec3 point = cubePoints[i];
-        
-        // Apply Rotation;
-        point.RotateInX(m_cubeRotation.x);
-        point.RotateInY(m_cubeRotation.y);
-        point.RotateInZ(m_cubeRotation.z);
+        face3 meshFace = m_cubeMesh->meshFaces[i];
 
-        // Move Point Away From Camera
-        point.z -= m_cameraPos.z;
+        std::vector<vec3> faceVertices(3,0);
 
-        projectedPoints[i] = project(point);
+        faceVertices[0] = m_cubeMesh->meshVertices[meshFace.x - 1];
+        faceVertices[1] = m_cubeMesh->meshVertices[meshFace.y - 1];
+        faceVertices[2] = m_cubeMesh->meshVertices[meshFace.z - 1];
 
-        drawRect(
-            projectedPoints[i].x + (m_window->getWinWidth() / 2),
-            projectedPoints[i].y + (m_window->getWinHeight() / 2),
-            5, 5,
-            0xFFFFFFFF
+        Triangle projectedTriangle;
+
+        // Loop all three vertices of this current face and apply transformations
+        for (int j = 0; j < 3; j++)
+        {
+            faceVertices[j].RotateInX(m_cubeRotation.x);
+            faceVertices[j].RotateInY(m_cubeRotation.y);
+            faceVertices[j].RotateInZ(m_cubeRotation.z);
+
+            // Translate the vertex away from the camera
+
+            faceVertices[j].z -= m_cameraPos.z;
+
+            vec2 projectedPoint = std::move(project(faceVertices[j]));
+
+            // apply transformations;
+            projectedPoint.x += m_window->getWinWidth() / 2;
+            projectedPoint.y += m_window->getWinHeight() / 2;
+            
+
+            projectedTriangle.points[j] = projectedPoint;
+        }
+
+        m_trisToDraw[i] = projectedTriangle;
+    }
+}
+
+void Application::render()
+{
+    for (Triangle& triangle : m_trisToDraw)
+    {
+        m_window->drawLine(
+            triangle.points[0].x, triangle.points[0].y,
+            triangle.points[1].x, triangle.points[1].y,
+            0xFFFFFF00
+        );
+        m_window->drawLine(
+            triangle.points[2].x, triangle.points[2].y,
+            triangle.points[1].x, triangle.points[1].y,
+            0xFFFFFF00
+        );
+        m_window->drawLine(
+            triangle.points[2].x, triangle.points[2].y,
+            triangle.points[0].x, triangle.points[0].y,
+            0xFFFFFF00
         );
     }
 }
@@ -74,7 +109,7 @@ vec2 Application::project(vec3 point)
     //return vec2(point.x * m_fovFactor + m_window->getWinWidth()/2, point.y * m_fovFactor + m_window->getWinHeight() / 2);
 
     // Prespective Projection
-    return vec2((point.x * m_fovFactor) / point.z , (point.y * m_fovFactor) / point.z);
+    return vec2(point.x, point.y) * m_fovFactor / 10;
 }
 
 void Application::dottedLines(uint32_t clr)
@@ -84,21 +119,5 @@ void Application::dottedLines(uint32_t clr)
             if (x % 10 == 0 && y % 10 == 0) 
                 m_window->drawPixel(x, y, clr);
 
-}
-
-void Application::drawRectPoints(int x1, int y1, int x2, int y2, uint32_t clr)
-{
-    if (x2 < x1) std::swap(x1, x2);
-    if (y2 < y1) std::swap(y1, y2);
-
-    for (int y = y1; y < y2; y++)
-        for (int x = x1; x < x2; x++)
-            m_window->drawPixel(x, y, clr);
-
-}
-
-void Application::drawRect(int x1, int y1, int width, int height, uint32_t clr)
-{
-    drawRectPoints(x1, y1, x1 + width, y1 + height, clr);
 }
 

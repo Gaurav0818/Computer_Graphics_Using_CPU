@@ -27,6 +27,9 @@ public:
     void setClearClr(uint32_t clr);
     void drawPixel(int x, int y, uint32_t clr);
 
+    void drawLine(int x0, int y0, int x1, int y1, uint32_t clr);
+    void drawRect(int x1, int y1, int width, int height, uint32_t clr);
+    void drawRectPoints(int x1, int y1, int x2, int y2, uint32_t clr);
 
     bool isRunning = true;
 
