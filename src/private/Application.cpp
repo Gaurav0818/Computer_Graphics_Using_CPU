@@ -30,28 +30,27 @@ void Application::run()
 void Application::setup()
 {
     m_cubeMesh = std::make_unique<Mesh>();
-    m_trisToDraw.resize(N_MESH_FACES);
 }
 
 void Application::update()
 {
     m_window->targetFrameTime(FRAME_TRAGET_TIME);
-
     dottedLines(0xFF555555);
 
     m_cubeRotation.x += 0.01;
     m_cubeRotation.y += 0.01;
     m_cubeRotation.z += 0.01;
 
+    m_trisToDraw.clear();
     for (int i = 0; i < N_MESH_FACES; i++)
     {
         face3 meshFace = m_cubeMesh->meshFaces[i];
 
-        std::vector<vec3> faceVertices(3,0);
-
-        faceVertices[0] = m_cubeMesh->meshVertices[meshFace.x - 1];
-        faceVertices[1] = m_cubeMesh->meshVertices[meshFace.y - 1];
-        faceVertices[2] = m_cubeMesh->meshVertices[meshFace.z - 1];
+        vec3 faceVertices[3] = {
+            m_cubeMesh->meshVertices[meshFace.x - 1],
+            m_cubeMesh->meshVertices[meshFace.y - 1],
+            m_cubeMesh->meshVertices[meshFace.z - 1]
+        };
 
         Triangle projectedTriangle;
 
@@ -76,7 +75,7 @@ void Application::update()
             projectedTriangle.points[j] = projectedPoint;
         }
 
-        m_trisToDraw[i] = projectedTriangle;
+        m_trisToDraw.emplace_back(std::move(projectedTriangle));
     }
 }
 
@@ -109,7 +108,7 @@ vec2 Application::project(vec3 point)
     //return vec2(point.x * m_fovFactor + m_window->getWinWidth()/2, point.y * m_fovFactor + m_window->getWinHeight() / 2);
 
     // Prespective Projection
-    return vec2(point.x, point.y) * m_fovFactor / 10;
+    return vec2(point.x, point.y) * m_fovFactor / point.z;
 }
 
 void Application::dottedLines(uint32_t clr)
