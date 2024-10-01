@@ -3,24 +3,49 @@
 #include <vector>
 
 #include "vector.h"
+#include "fstream"
+#include "sstream"
 
-#define N_MESH_VERTICES 8
-#define N_MESH_FACES (6 * 2)	// 6 cube faces, 2 Tri each per face
+template<typename T>
+class Triangle
+{
+public:
+	Triangle() {
+		points[0] = T();
+		points[1] = T();
+		points[2] = T();
+	}
 
+	// Constructor to initialize with specific points
+	Triangle(const T& p0, const T& p1, const T& p2) {
+		points[0] = p0;
+		points[1] = p1;
+		points[2] = p2;
+	}
+
+	T points[3];
+};
 
 class Mesh
 {
 public:
-	Mesh() ;
+	Mesh() = default;
 	~Mesh() = default;
 
+	Mesh(const Mesh&) = delete; // Delete Copy constructer
 
-	std::vector<vec3> meshVertices = { 0 };
-	std::vector<face3> meshFaces = { 0 };
-};
+	Mesh(Mesh&& other) noexcept :
+		vertices(std::move(other.vertices)),
+		faces(std::move(other.faces)),
+		rotation(std::move(other.rotation))
+	{}
 
-class Triangle
-{
+	void loadObjFileDate(const char* filePath);
+
 public:
-	vec2 points[3] = { 0 };
+	std::vector<vec3_f> vertices;
+	std::vector<vec3_i> faces;
+	std::vector<vec3_i> texture;
+	std::vector<vec3_i> normal;
+	vec3_f rotation;
 };

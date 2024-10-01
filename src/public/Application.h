@@ -7,7 +7,7 @@
 #include "vector.h"
 #include "Mesh.h"
 
-#define FPS 60
+#define FPS 128
 #define FRAME_TRAGET_TIME (1000 / FPS)
 
 class Application {
@@ -19,22 +19,21 @@ public:
     void run();
 
 private:
-    std::unique_ptr<Window> m_window = std::make_unique<Window>();
+    std::unique_ptr<Window> m_window;
+    std::unique_ptr<Mesh> m_mesh;
 
-    std::vector<Triangle> m_trisToDraw;
+    std::vector<Triangle<vec2_f>> m_trisToDraw;
 
     void setup();
     void update();
     void render();
 
-    vec3 m_cameraPos = { 0, 0, -5 };
-    vec3 m_cubeRotation = { 0 };
+    vec3_f m_cameraPos = { 0, 0, -5 };
+    vec3_f m_cubeRotation = { 0 };
     float m_fovFactor = 640;
-    
-    std::unique_ptr<Mesh> m_cubeMesh;
 
-    vec2 project(vec3 point);
-
+    bool isfacingCamera(const Triangle<vec3_f>& face);
+    vec2_f project(const vec3_f& point);
 
     void dottedLines(uint32_t clr);
 };

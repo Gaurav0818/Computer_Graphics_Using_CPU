@@ -3,6 +3,7 @@
 
 void Application::init() 
 {
+    m_window = std::make_unique<Window>();
     m_window->init();
 }
 
@@ -29,7 +30,9 @@ void Application::run()
 
 void Application::setup()
 {
-    m_cubeMesh = std::make_unique<Mesh>();
+    m_mesh = std::make_unique<Mesh>();
+
+    m_mesh->loadObjFileDate("assets/f22.obj");
 }
 
 void Application::update()
@@ -38,50 +41,57 @@ void Application::update()
     dottedLines(0xFF555555);
 
     m_cubeRotation.x += 0.01;
-    m_cubeRotation.y += 0.01;
-    m_cubeRotation.z += 0.01;
+    m_cubeRotation.y += 0.00;
+    m_cubeRotation.z += 0.00;
 
     m_trisToDraw.clear();
-    for (int i = 0; i < N_MESH_FACES; i++)
+    for (int i = 0; i < m_mesh->faces.size(); i++)
     {
-        face3 meshFace = m_cubeMesh->meshFaces[i];
+        vec3_i meshFace = m_mesh->faces[i];
 
-        vec3 faceVertices[3] = {
-            m_cubeMesh->meshVertices[meshFace.x - 1],
-            m_cubeMesh->meshVertices[meshFace.y - 1],
-            m_cubeMesh->meshVertices[meshFace.z - 1]
+        Triangle<vec3_f> faceVertices = {
+           m_mesh->vertices[meshFace.x - 1],
+           m_mesh->vertices[meshFace.y - 1],
+           m_mesh->vertices[meshFace.z - 1]
         };
 
-        Triangle projectedTriangle;
 
         // Loop all three vertices of this current face and apply transformations
         for (int j = 0; j < 3; j++)
         {
-            faceVertices[j].RotateInX(m_cubeRotation.x);
-            faceVertices[j].RotateInY(m_cubeRotation.y);
-            faceVertices[j].RotateInZ(m_cubeRotation.z);
+            faceVertices.points[j].RotateInX(m_cubeRotation.x);
+            faceVertices.points[j].RotateInY(m_cubeRotation.y);
+            faceVertices.points[j].RotateInZ(m_cubeRotation.z);
 
             // Translate the vertex away from the camera
+            faceVertices.points[j].z -= m_cameraPos.z;
 
-            faceVertices[j].z -= m_cameraPos.z;
-
-            vec2 projectedPoint = std::move(project(faceVertices[j]));
-
-            // apply transformations;
-            projectedPoint.x += m_window->getWinWidth() / 2;
-            projectedPoint.y += m_window->getWinHeight() / 2;
-            
-
-            projectedTriangle.points[j] = projectedPoint;
         }
 
-        m_trisToDraw.emplace_back(std::move(projectedTriangle));
+        if (isfacingCamera(faceVertices))
+        {
+            Triangle<vec2_f> projectedTriangle;
+            for (int j = 0; j < 3; j++)
+            {
+                vec2 projectedPoint = std::move(project(faceVertices.points[j]));
+
+                // apply transformations;
+                projectedPoint.x += m_window->getWinWidth() / 2;
+                projectedPoint.y += m_window->getWinHeight() / 2;
+
+
+                projectedTriangle.points[j] = projectedPoint;
+            }
+
+
+            m_trisToDraw.emplace_back(std::move(projectedTriangle));
+        }
     }
 }
 
 void Application::render()
 {
-    for (Triangle& triangle : m_trisToDraw)
+    for (auto& triangle : m_trisToDraw)
     {
         m_window->drawLine(
             triangle.points[0].x, triangle.points[0].y,
@@ -101,14 +111,23 @@ void Application::render()
     }
 }
 
+bool Application::isfacingCamera(const Triangle<vec3_f>& face)
+{
+    vec3_f ray = m_cameraPos - face.points[0];
+    vec3_f ab = face.points[1] - face.points[0];
+    vec3_f ac = face.points[2] - face.points[0];
+    vec3_f normal = cross(ab, ac);
+
+    return (dot(normal,ray) <= 0) ? false : true;
+}
+
 // recives a 3d vector and returns a projected 2d point
-vec2 Application::project(vec3 point)
+vec2_f Application::project(const vec3_f& point)
 {
     // Ortho Projection
-    //return vec2(point.x * m_fovFactor + m_window->getWinWidth()/2, point.y * m_fovFactor + m_window->getWinHeight() / 2);
+    //return vec2_f(point.x, point.y) * m_fovFactor;
 
-    // Prespective Projection
-    return vec2(point.x, point.y) * m_fovFactor / point.z;
+    return vec2_f(point.x, point.y) * m_fovFactor / point.z;
 }
 
 void Application::dottedLines(uint32_t clr)
