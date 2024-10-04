@@ -54,14 +54,11 @@ void Window::processInput()
 
     switch (event.type) {
     case SDL_QUIT:
-        isRunning = false;
-        break;
-    case SDL_KEYDOWN:
-        if (event.key.keysym.sym == SDLK_ESCAPE) {
             isRunning = false;
-        }
-        break;
     }
+
+    if (isKeyPressed(Key::ESCAPE))
+        isRunning = false;
 }
 
 void Window::render() 
@@ -100,6 +97,36 @@ void Window::drawPixel(int x, int y, uint32_t clr)
         m_colorBuffer[m_windowWidth * y + x] = clr;
 }
 
+bool Window::isKeyDown(int keyCode)
+{
+    return m_keyInput->isButtonDown(keyCode);
+}
+
+bool Window::isKeyPressed(int keyCode)
+{
+    return m_keyInput->isButtonPressed(keyCode);
+}
+
+void Window::getMousePos(int& x, int& y)
+{
+    SDL_GetMouseState(&x, &y);
+}
+
+bool Window::isEnabled(ERenderType type)
+{
+    return ( ( (m_activeRenderTypes >> type) & 1) == 1 );
+}
+
+void Window::enableRenderType(ERenderType type)
+{
+    m_activeRenderTypes = m_activeRenderTypes | (1 << type);
+}
+
+void Window::disableRenderType(ERenderType type)
+{
+    m_activeRenderTypes = m_activeRenderTypes & (0xFFFFFFFF ^ (1 << type));
+}
+
 void Window::drawLine(int x0, int y0, int x1, int y1, uint32_t clr)
 {
     int dx = x1 - x0;
@@ -120,6 +147,47 @@ void Window::drawLine(int x0, int y0, int x1, int y1, uint32_t clr)
         currentX += xInc;
         currentY += yInc;
     }
+}
+
+void Window::drawTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t clr)
+{
+
+    if (y0 > y1)
+    {
+        swap(y0, y1);
+        swap(x0, x1);
+    }
+    
+    if (y1 > y2)
+    {
+        swap(y2, y1);
+        swap(x2, x1);
+    }
+    
+    if (y0 > y1)
+    {
+        swap(y0, y1);
+        swap(x0, x1);
+    }
+    
+    if (y1 == y2)
+    {
+        // pure Bottom flat triangle
+        fillFlatBottomTriangle(x0, y0, x1, y1, x2, y2, clr);
+    }
+    else if (y0 == y1)
+    {
+        // pure Top flat triangle
+        fillFlatTopTriangle(x0, y0, x1, y1, x2, y2, clr);
+    }
+    else
+    {
+        int my = y1;
+        int mx = ((float)(x2 - x0) * (y1 - y0) / (float)(y2 - y0)) + x0;
+    
+        fillFlatBottomTriangle(x0, y0, x1, y1, mx, my, clr);
+        fillFlatTopTriangle(x1, y1, mx, my, x2, y2, clr);
+    }
 
 }
 
@@ -136,10 +204,54 @@ void Window::drawRectPoints(int x1, int y1, int x2, int y2, uint32_t clr)
 
 void Window::drawRect(int x1, int y1, int width, int height, uint32_t clr)
 {
-    drawRectPoints(x1, y1, x1 + width, y1 + height, clr);
+    drawRectPoints(x1 - width / 2, y1 - width / 2, x1 + width / 2, y1 + height / 2, clr);
 }
 
-void Window::renderColorBuffer() 
+template <typename T>
+void Window::swap(T& a, T& b)
+{
+    a ^= b;
+    b ^= a;
+    a ^= b;
+}
+
+void Window::fillFlatBottomTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t clr)
+{
+    float invSlope1 = (float)(x1 - x0)/ (y1 - y0);
+    float invSlope2 = (float)(x2 - x0)/ (y2 - y0);
+
+    // Start xStart and xEnd from the top vertex(x0, y0);
+    float xStart = x0;
+    float xEnd = x0;
+
+    // Loop all the scanlines from top to bottom
+    for (int y = y0; y <= y2; y++)
+    {
+        drawLine(xStart, y, xEnd, y, clr);
+        xStart += invSlope1;
+        xEnd += invSlope2;
+    }
+}
+
+void Window::fillFlatTopTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t clr)
+{
+    float invSlope1 = (float)(x2 - x0) / (y2 - y0);
+    float invSlope2 = (float)(x2 - x1) / (y2 - y1);
+
+    // Start xStart and xEnd from the bottom vertex(x2, y2);
+    float xStart = x2;
+    float xEnd = x2;
+
+    // Loop all the scanlines from bottom to top
+    for(int y = y2; y >=y0; y--)
+    {
+        drawLine(xStart, y, xEnd, y, clr);
+        xStart -= invSlope1;
+        xEnd -= invSlope2;
+    }
+}
+
+void Window::renderColorBuffer()
 {
     SDL_UpdateTexture(m_colorBufferTexture.get(), NULL, m_colorBuffer.data(), sizeof(uint32_t) * m_windowWidth);
     SDL_RenderCopy(m_renderer.get(), m_colorBufferTexture.get(), NULL, NULL);
