@@ -35,7 +35,7 @@ void Application::setup()
 
     m_mesh = std::make_unique<Mesh>();
 
-    m_mesh->loadObjFileDate("assets/cube.obj");
+    m_mesh->loadObjFileDate("assets/f22.obj");
 
     m_window->setClearClr(0xFF000000);
 
@@ -120,6 +120,7 @@ void Application::update()
             faceVertices.points[j] += m_cameraPos;
         }
 
+        
         bool isFacing = isfacingCamera(faceVertices);
 
         if ((!isFacing && m_window->isEnabled(ERenderType::eCullFrontFace)) || 
@@ -136,6 +137,7 @@ void Application::update()
                 projectedPoint.y += m_window->getWinHeight() / 2;
 
                 projectedTriangle.points[j] = projectedPoint;
+                projectedTriangle.avgDepth = faceVertices.points[j].z;
             }
 
             m_trisToDraw.emplace_back(std::move(projectedTriangle));
@@ -143,11 +145,17 @@ void Application::update()
     }
 }
 
+
 void Application::render()
 {
-    if (m_window->isEnabled(ERenderType::eRenderFill))
+    std::sort(m_trisToDraw.begin(), m_trisToDraw.end(), [](const Triangle<vec2_f>& a, const Triangle<vec2_f>& b)
+        {
+            return a.avgDepth < b.avgDepth;
+        });
+
+    for (auto& triangle : m_trisToDraw)
     {
-        for (auto& triangle : m_trisToDraw)
+        if (m_window->isEnabled(ERenderType::eRenderFill))
         {
             m_window->drawTriangle(
                 triangle.points[0].x, triangle.points[0].y,
@@ -156,12 +164,10 @@ void Application::render()
                 0xFFFFFFFF
             );
         }
-    }
 
-    if (m_window->isEnabled(ERenderType::eRenderWireframe))
-    {
-        for (auto& triangle : m_trisToDraw)
+        if (m_window->isEnabled(ERenderType::eRenderWireframe))
         {
+
             m_window->drawLine(
                 triangle.points[0].x, triangle.points[0].y,
                 triangle.points[1].x, triangle.points[1].y,
@@ -174,18 +180,19 @@ void Application::render()
                 triangle.points[0].x, triangle.points[0].y,
                 triangle.points[2].x, triangle.points[2].y,
                 m_window->m_wireFrameClr);
+
         }
-    }
 
-    if (m_window->isEnabled(ERenderType::eRenderVertex))
-    {
-        for (auto& triangle : m_trisToDraw)
+        if (m_window->isEnabled(ERenderType::eRenderVertex))
         {
+
             m_window->drawRect(triangle.points[0].x, triangle.points[0].y, 8, 8, m_window->m_vertexClr);
             m_window->drawRect(triangle.points[1].x, triangle.points[1].y, 8, 8, m_window->m_vertexClr);
             m_window->drawRect(triangle.points[2].x, triangle.points[2].y, 8, 8, m_window->m_vertexClr);
+
         }
     }
+
 }
 
 bool Application::isfacingCamera(const Triangle<vec3_f>& face)

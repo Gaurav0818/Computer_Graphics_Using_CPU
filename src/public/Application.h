@@ -2,6 +2,7 @@
 #define APPLICATION_H
 
 #include <memory>
+#include <algorithm>
 
 #include "Window.h"
 #include "vector.h"

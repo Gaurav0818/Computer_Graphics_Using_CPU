@@ -24,6 +24,7 @@ public:
 	}
 
 	T points[3];
+	int avgDepth;
 };
 
 class Mesh
